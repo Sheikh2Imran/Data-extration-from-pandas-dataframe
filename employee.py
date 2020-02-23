@@ -25,12 +25,6 @@ class Employee:
         dataframe['Name'] = dataframe['Name'].str.replace(' ', '')
         return dataframe
     
-#    def match_dataframe_by_name(self, df1, df2, df3):
-#        employee_dataframe = pd.merge(pd.merge(df1,df2,on='Name'),df3,on='Name')
-#        return employee_dataframe
-#        dataframes = [df1, df2, df3]
-#        return reduce(lambda left,right: pd.merge(left,right,on='Name'), dataframes)
-    
     def fuzzy_merge_df1_and_df2(self, df_1, df_2, key1, key2, threshold=50, limit=2):
         s = df_2[key2].tolist()
     
@@ -85,9 +79,6 @@ if __name__ == '__main__':
     df3 = employee.preprocess_data_with_regex(df3)
     df3 = employee.make_name_lower_case(df3)
     df3 = employee.remove_white_space(df3)
-
-#    employee_dataframe = employee.match_dataframe_by_name(df1, df2, df3)
-#    final_dataframe = employee.get_specific_columns_from_dataframe(employee_dataframe)
     
     # match dataframes by name
     employee_dataframe = employee.fuzzy_merge_df1_df2_df3(df1_and_df2, df3, 'Name', 'Name', threshold=50)
