@@ -26,6 +26,14 @@ class Employee:
         return dataframe
     
     def fuzzy_merge_df1_and_df2(self, df_1, df_2, key1, key2, threshold=50, limit=2):
+        """
+        df_1 is the left table to join
+        df_2 is the right table to join
+        key1 is the key column of the left table
+        key2 is the key column of the right table
+        threshold is how close the matches should be to return a match, based on Levenshtein distance
+        limit is the amount of matches that will get returned, these are sorted high to low
+        """
         s = df_2[key2].tolist()
     
         m = df_1[key1].apply(lambda x: process.extract(x, s, limit=limit))    
@@ -38,6 +46,14 @@ class Employee:
         return df_1
     
     def fuzzy_merge_df1_df2_df3(self, df_1, df_2, key1, key2, threshold=50, limit=2):
+        """
+        df_1 is the left table to join
+        df_2 is the right table to join
+        key1 is the key column of the left table
+        key2 is the key column of the right table
+        threshold is how close the matches should be to return a match, based on Levenshtein distance
+        limit is the amount of matches that will get returned, these are sorted high to low
+        """
         s = df_2[key2].tolist()
     
         m = df_1[key1].apply(lambda x: process.extract(x, s, limit=limit))    
