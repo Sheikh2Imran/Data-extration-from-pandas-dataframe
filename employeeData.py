@@ -1,4 +1,5 @@
 import pandas as pd
+from functools import reduce
 from pandas import read_excel
 from pandas import ExcelWriter
 
@@ -11,7 +12,7 @@ class Employee:
     
     def preprocess_data_with_regex(self, dataframe):
         regex1 = '\(.*?\)'
-        regex2 = '\d'
+        regex2 = '\d'         
         regex3 = '\w-'
         regex4 = '^md.'
         dataframe['Name'].replace(regex=True, inplace=True, to_replace=[regex1, regex2, regex3, regex4], value=r'')
@@ -26,62 +27,39 @@ class Employee:
         dataframe['name'] = dataframe['name'].str.replace(' ', '')
         return dataframe
     
-#    def match_dataframe_by_name(self, df1, df2, df3):
-#        employee_dataframe = pd.merge(pd.merge(df1,df2,on='Name'),df3,on='Name')
-#        return employee_dataframe
-#        dataframes = [df1, df2, df3]
-#        return reduce(lambda left,right: pd.merge(left,right,on='Name'), dataframes)
-    
-    def fuzzy_merge_df1_and_df2(self, df_1, df_2, key1, key2, threshold=50, limit=2):
-        """
-        df_1 is the left table to join
-        df_2 is the right table to join
-        key1 is the key column of the left table
-        key2 is the key column of the right table
-        threshold is how close the matches should be to return a match, based on Levenshtein distance
-        limit is the amount of matches that will get returned, these are sorted high to low
-        """
-        s = df_2[key2].tolist()
-    
-        m = df_1[key1].apply(lambda x: process.extract(x, s, limit=limit))    
-        df_1['matches'] = m
-    
-        m2 = df_1['matches'].apply(lambda x: ', '.join([i[0] for i in x if i[1] >= threshold]))
-        df_1['Device ID'] = df_2['Identification No']
-        df_1['matches'] = m2
-    
+    def fuzzy_merge_df1_and_df2_name(self, df_1, df_2):
+        df_1.loc[:, 'Device ID'] = ''
+        df_1.loc[:, 'Name_Device'] = ''
+        df_2.loc[:, 'Name'] = ['Null' if name2 is '' else name2 for name2 in df_2['Name']]
+        
+        for i in range(len(df_1)):
+            for j in range(len(df_2)):
+                if df_1.loc[i, 'Name'].lower().replace(' ', '') == df_2.loc[j, 'Name'].lower().replace(' ', ''):
+                    df_1.loc[i, 'Device ID'] = df_2.loc[j, 'Identification No']
+                    df_1.loc[i, 'Name_Device'] = df_2.loc[j, 'Name']
+                    
+        df1_and_df2.loc[:, 'Device ID'] = ['Null' if device_id is '' else device_id for device_id in df1_and_df2['Device ID']]
         return df_1
     
-    def fuzzy_merge_df1_df2_df3(self, df_1, df_2, key1, key2, threshold=50, limit=2):
-        """
-        df_1 is the left table to join
-        df_2 is the right table to join
-        key1 is the key column of the left table
-        key2 is the key column of the right table
-        threshold is how close the matches should be to return a match, based on Levenshtein distance
-        limit is the amount of matches that will get returned, these are sorted high to low
-        """
-        s = df_2[key2].tolist()
-    
-        m = df_1[key1].apply(lambda x: process.extract(x, s, limit=limit))    
-        df_1['matches'] = m
-    
-        m2 = df_1['matches'].apply(lambda x: ', '.join([i[0] for i in x if i[1] >= threshold]))
-        df_1['Employee ID'] = df_2['Id']
-        df_1['matches'] = m2
-    
-        return df_1
+    def fuzzy_merge_df1_df2_df3_name(self, df1_and_df2, df_3):
+        df1_and_df2.loc[:, 'Employee ID'] = ''
+        df1_and_df2.loc[:, 'Name_Employee'] = ''
+        
+        for i in range(len(df1_and_df2)):
+            for j in range(len(df_3)):
+                if df1_and_df2.loc[i, 'Name'].lower().replace(' ', '') == df_3.loc[j, 'Name'].lower().replace(' ', ''):
+                    df1_and_df2.loc[i, 'Employee ID'] = df_3.loc[j, 'Id']
+                    df1_and_df2.loc[i, 'Name_Employee'] = df_3.loc[j, 'Name']
+#                    
+        df1_and_df2.loc[:, 'Employee ID'] = ['Null' if employee_id is '' else employee_id for employee_id in df1_and_df2['Employee ID']]
+        return df1_and_df2
     
     def write_dataframe_to_exel(self, dataframe):
         writer = ExcelWriter('EmployeeExport.xlsx')
         dataframe.to_excel(writer,'Sheet')
         writer.save()   
-        
-    def remove_columns(self, dataframe, **kwargs):
-        columns = [kwargs['name'], kwargs['matches']]
-        dataframe.drop(columns, inplace=True, axis=1)
-        return dataframe
-       
+
+
 
 if __name__ == '__main__':
     
@@ -99,21 +77,13 @@ if __name__ == '__main__':
     df2 = employee.make_name_lower_case(df2)
     df2 = employee.remove_white_space(df2)
     
-    # match dataframes by name
-    df1_and_df2 = employee.fuzzy_merge_df1_and_df2(df1, df2, 'name', 'name', threshold=75)
-        
     file_name3 = 'all employee list.xls'
     df3 = employee.read_xl_file(file_name3)
     df3 = employee.preprocess_data_with_regex(df3)
     df3 = employee.make_name_lower_case(df3)
     df3 = employee.remove_white_space(df3)
-
-#    employee_dataframe = employee.match_dataframe_by_name(df1, df2, df3)
-#    final_dataframe = employee.get_specific_columns_from_dataframe(employee_dataframe)
     
-    # match dataframes by name
-    employee_dataframe = employee.fuzzy_merge_df1_df2_df3(df1_and_df2, df3, 'name', 'name', threshold=75)
-#    employee_dataframe = employee.remove_column(employee_dataframe, 'name', 'matches')
+    df1_and_df2 = employee.fuzzy_merge_df1_and_df2_name(df1, df2)
+    final_dataframe = employee.fuzzy_merge_df1_df2_df3_name(df1_and_df2, df3)
     
-    # write pandas dataframe to exel file.
-    employee.write_dataframe_to_exel(employee_dataframe)
+    employee.write_dataframe_to_exel(final_dataframe)
