@@ -1,1 +1,0 @@
-# Data-extration-from-pandas-dataframe
